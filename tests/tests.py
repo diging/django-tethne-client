@@ -30,12 +30,15 @@ def ok(fpath):
     with open(fpath, 'rb') as f:
         return f.read()
 
-def mock_requests_get(path, params={}):
+def mock_requests_get(path, params={}, headers={}):
     try:
         o = urlparse(path)
         params.update(parse_qs(o.query))
     except:
         return MockResponse(400, 'bad bad bad')
+
+    if 'Authorization' not in headers:
+        return MockResponse(200, '[]')
 
     code = 200
     if o.path.endswith('corpus/'):
