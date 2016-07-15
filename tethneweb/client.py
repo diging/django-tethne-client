@@ -18,6 +18,9 @@ class TethneClient(object):
     def _path(self, partial):
         return urljoin(self.endpoint, partial)
 
+    def _auth_header(self):
+        return {'Authorization': 'Token %s' % self.token}
+
     def _prep_path(self, path, params):
         """
         Pull query parameters from ``path`` and update ``params``.
@@ -41,7 +44,7 @@ class TethneClient(object):
     def _get_or_fail(self, path, params={}, message=None):
         path = path if path.startswith('http') else self._path(path)
         path, params = self._prep_path(path, params)
-        response = requests.get(path, params=params)
+        response = requests.get(path, params=params, headers=self._auth_header())
         return self._handle_response(response, message)
 
     def _post_or_fail(self, path, data, message=None):
@@ -100,5 +103,24 @@ class TethneClient(object):
         """
         List all papers to which the user has access.
         """
-        results = self._get_paginated_list('rest/author/', limit=limit, params=params)
+        results = self._get_paginated_list('rest/author_instance/', limit=limit, params=params)
         return [Author(self, result) for result in results]
+
+    def list_institutions(self, limit=100, **params):
+        """
+        List all papers to which the user has access.
+        """
+        results = self._get_paginated_list('rest/institution_instance/', limit=limit, params=params)
+        return [Institution(self, result) for result in results]
+
+    def get_paper(self, id):
+        return Paper(self._get_or_fail('rest/paper/%i/' % int(id)))
+
+    def get_author(self, id):
+        return Author(self._get_or_fail('rest/author_instance/%i/' % int(id)))
+
+    def get_corpus(self, id):
+        return Corpus(self._get_or_fail('rest/corpus/%i/' % int(id)))
+
+    def get_institution(self, id):
+        return Institution(self._get_or_fail('rest/institution_instance/%i/' % int(id)))
