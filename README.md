@@ -1,4 +1,4 @@
-# django-tethne-client <img src="https://travis-ci.org/diging/django-tethne-client.svg" alt="build:">
+# django-tethne-client <a href="https://travis-ci.org/diging/django-tethne-client/builds"><img src="https://travis-ci.org/diging/django-tethne-client.svg" alt="build:"></a>
 
 Python client for the django-tethne JSON API.
 
