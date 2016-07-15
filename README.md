@@ -67,16 +67,16 @@ All list methods take the following parameters:
 * ``get_author(id)``: Returns an ``Author`` object.
 * ``get_institution(id)``: Returns an ``Institution`` object.
 
-### Corpus
+### ``Corpus``
 
-### Paper
+### ``Paper``
 
-### Author
+### ``Author``
 
-### Institution
+### ``Institution``
 
-### Affiliation
+### ``Affiliation``
 
-### Metadataum
+### ``Metadataum``
 
-### Identifier
+### ``Identifier``
