@@ -1,0 +1,1 @@
+{"count":1,"next":null,"previous":null,"results":[{"url":"http://127.0.0.1:8000/rest/corpus/1/?format=json","id":1,"source":"WOS","label":"testAltman","date_created":"2016-07-15T14:56:01.596557Z","created_by":"http://127.0.0.1:8000/rest/user/1/?format=json","papers":"http://127.0.0.1:8000/rest/paper/?concrete=True&corpus=1&format=json"}]}
