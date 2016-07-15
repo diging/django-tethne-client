@@ -5,6 +5,7 @@ from urlparse import urlparse, parse_qs, urljoin, urlunparse, SplitResult
 from urllib import urlencode
 
 from tethneweb.classes import Corpus, Paper
+from tethneweb.upload import CorpusHandler
 
 
 class TethneClient(object):
@@ -47,8 +48,10 @@ class TethneClient(object):
         response = requests.get(path, params=params, headers=self._auth_header())
         return self._handle_response(response, message)
 
-    def _post_or_fail(self, path, data, message=None):
-        response = requests.post(path if path.startswith('http') else self._path(path), data=data)
+    def _post_or_fail(self, path, data, message=None, with_headers=False):
+        response = requests.post(path if path.startswith('http') else self._path(path),
+                                 data=data,
+                                 headers=self._auth_header() if with_headers else {})
         return self._handle_response(response, message)
 
     def _get_paginated_list(self, path, limit=None, page_size=20, params={}):
@@ -79,9 +82,9 @@ class TethneClient(object):
         data = self._post_or_fail('api-token-auth/', auth_data, message)
         self.token = data.get('token', None)
 
-    def follow_link(self, path, result_class, paginated=True, limit=None, params={}):
+    def follow_link(self, path, result_class, paginated=True, limit=None, **params):
         if paginated:
-            results = self._get_paginated_list(path, limit=limit)
+            results = self._get_paginated_list(path, limit=limit, params=params)
             return [result_class(self, result) for result in results]
         return result_class(self, self._get_or_fail(path, params=params))
 
@@ -124,3 +127,13 @@ class TethneClient(object):
 
     def get_institution(self, id):
         return Institution(self._get_or_fail('rest/institution_instance/%i/' % int(id)))
+
+    def upload(self, tethne_corpus, label, source, batch_size=100):
+        handler = CorpusHandler(self, tethne_corpus, label, source, batch_size)
+        handler.run()
+
+    def create_corpus(self, data):
+        return Corpus(self, self._post_or_fail('rest/corpus/', data, with_headers=True))
+
+    def create_bulk(self, model_name, data):
+        return self._post_or_fail('rest/%s/' % model_name, {'data': json.dumps(data)}, with_headers=True)
