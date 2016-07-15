@@ -14,7 +14,7 @@ class MockResponse:
         return json.loads(self.content)
 
 
-def mock_requests_authenticate(endpoint, data={}):
+def mock_requests_authenticate(endpoint, data={}, headers={}):
     if all([
             endpoint,
             'username' in data,
