@@ -1,11 +1,11 @@
+__all__ = ['TethneClient',]
+
 import json, requests
 from urlparse import urlparse, parse_qs, urljoin, urlunparse, SplitResult
 from urllib import urlencode
 
 from tethneweb.classes import Corpus, Paper
 
-
-__all__ = ['TethneClient',]
 
 class TethneClient(object):
     def __init__(self, endpoint, username, password, authenticate=True):

@@ -1,3 +1,6 @@
+__all__ = ['Corpus', 'Paper', 'Author', 'Affiliation', 'Metadatum',
+           'Identifier']
+
 class Result(object):
     def __init__(self, client, data):
         self.client = client

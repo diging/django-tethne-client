@@ -1,0 +1,11 @@
+language: python
+cache: pip
+os:
+  - linux
+python:
+  - "2.7.9"
+  - "2.7.10"
+script:
+  - pip install -U pip
+  - pip install -r test_requirements.txt
+  - nosetests --with-coverage --cover-package=tethneweb
