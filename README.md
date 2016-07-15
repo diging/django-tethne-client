@@ -58,7 +58,7 @@ $ pip install -U django-tethne-client
 All list methods take the following parameters:
 
 * **``limit``** (default: 100): Maximum number of records to return.
-* **``**params``**: Additional keyword arguments are passed to the ``params`` argument when calling  [``requests.get()``](http://docs.python-requests.org/en/master/api/#requests.get).
+* **``params``**: Additional keyword arguments are passed to the ``params`` argument when calling  [``requests.get()``](http://docs.python-requests.org/en/master/api/#requests.get).
 
 #### Get methods
 
