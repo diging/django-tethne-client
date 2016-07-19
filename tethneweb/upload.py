@@ -24,24 +24,26 @@ exclude_fields = [
 
 class CorpusHandler(object):
     _add_order = [
-        'paper',
-        'identifier',
-        'metadatum',
+        'paper_instance',
+        'instance_identifier',
+        'instance_metadatum',
         'author_instance',
         'institution_instance',
         'affiliation_instance',
     ]
 
-    def __init__(self, client, tethne_corpus, label, source, batch_size=100):
+    def __init__(self, client, tethne_corpus, label, source, batch_size=100, corpus=None):
         self.client = client
         self.id_map = {}
         self.batch_size = batch_size
         self.hoppers = defaultdict(list)
 
-        self.corpus = self.client.create_corpus({
-            'source': source,
-            'label': label,
-        })
+        if not corpus:
+            corpus = self.client.create_corpus({
+                'source': source,
+                'label': label,
+            })
+        self.corpus = corpus
         self.tethne_corpus = tethne_corpus
 
     def run(self):
@@ -51,7 +53,7 @@ class CorpusHandler(object):
             for tethne_reference in getattr(tethne_paper, 'citedReferences', []):
                 self._handle_cited_reference(tethne_reference, paper_id)
 
-            if len(self.hoppers['paper']) >= self.batch_size:
+            if len(self.hoppers['paper_instance']) >= self.batch_size:
                 self._commit()
         self._commit()
 
@@ -127,18 +129,18 @@ class CorpusHandler(object):
 
         })
         paper_data.update(**additional)
-        paper_id = self._add_instance('paper', paper_data)
+        paper_id = self._add_instance('paper_instance', paper_data)
 
         metadata = []
         for metadata_data in self._generate_metadata(tethne_paper):
             metadata_data.update({'paper_id': paper_id})
-            self._add_instance('metadatum', metadata_data)
+            self._add_instance('instance_metadatum', metadata_data)
 
         identifiers = []
         for identifier_data in self._generate_identifiers(tethne_paper):
 
             identifier_data.update({'paper_id': paper_id})
-            self._add_instance('identifier', identifier_data)
+            self._add_instance('instance_identifier', identifier_data)
 
         self._handle_authors(tethne_paper, paper_id)
         return paper_id

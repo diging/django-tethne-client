@@ -1,0 +1,14 @@
+{
+    "url": "http://127.0.0.1:8000/rest/corpus/1/",
+    "id": 1,
+    "source": "WOS",
+    "label": "thisisatest",
+    "date_created": "2016-07-18T12:14:55.232930Z",
+    "created_by": "http://127.0.0.1:8000/rest/user/1/",
+    "papers": "http://127.0.0.1:8000/rest/paper_instance/?concrete=true&corpus=1",
+    "citations": "http://127.0.0.1:8000/rest/paper_instance/?concrete=false&corpus=1",
+    "affiliations": "http://127.0.0.1:8000/rest/affiliation_instance/?corpus=1",
+    "authors": "http://127.0.0.1:8000/rest/author_instance/?corpus=1",
+    "institutions": "http://127.0.0.1:8000/rest/institution_instance/?corpus=1",
+    "metadata": "http://127.0.0.1:8000/rest/instance_metadatum/?corpus=1"
+}

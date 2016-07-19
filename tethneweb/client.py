@@ -1,28 +1,35 @@
 __all__ = ['TethneClient',]
 
-import json, requests
+import json, requests, copy
 from urlparse import urlparse, parse_qs, urljoin, urlunparse, SplitResult
 from urllib import urlencode
 
 from tethneweb.classes import Corpus, Paper
 from tethneweb.upload import CorpusHandler
+from tethneweb.results import Result, ResultList
 
 
-class TethneClient(object):
-    def __init__(self, endpoint, username, password, authenticate=True):
-        self.endpoint = endpoint
-        self.username = username
-        self.password = password
-        if authenticate:
-            self.authenticate()
+class Request(object):
+    def __init__(self, client, url, params={}, headers={},
+                 get_method=requests.get, post_method=requests.post):
+        self.url, self.params = self._prep_path(url, params)
+        self.headers = headers
+        self.client = client
+        self.get_method = get_method
+        self.post_method = post_method
 
-    def _path(self, partial):
-        return urljoin(self.endpoint, partial)
+    def set_header(self, key, value):
+        self.headers.update({key: value})
 
-    def _auth_header(self):
-        return {'Authorization': 'Token %s' % self.token}
+    def set_param(self, key, value):
+        self.params.update({key: value})
 
-    def _prep_path(self, path, params):
+    def _handle_response(self, response):
+        if response.status_code != requests.codes.ok:
+            raise IOError(response.status_code)
+        return response.json()
+
+    def _prep_path(self, path, params={}):
         """
         Pull query parameters from ``path`` and update ``params``.
 
@@ -37,39 +44,54 @@ class TethneClient(object):
         new = SplitResult(o.scheme, o.netloc, o.path, '', '')
         return new.geturl(), params
 
-    def _handle_response(self, response, message=None):
-        if response.status_code != requests.codes.ok:
-            raise RuntimeError(message if message else 'Server returned status %i' % response.status_code)
-        return response.json()
+    def clone(self):
+        return Request(self.client, self.url, params=copy.copy(self.params),
+                       headers=copy.copy(self.headers),
+                       get_method=self.get_method,
+                       post_method=self.post_method)
+
+    def get(self):
+        response = self.get_method(self.url, params=self.params, headers=self.headers)
+        return self._handle_response(response)
+
+    def post(self):
+        response = self.post_method(self.url, data=self.params, headers=self.headers)
+        return self._handle_response(response)
+
+
+class TethneClient(object):
+    def __init__(self, endpoint, username, password, authenticate=True,
+                 get_method=requests.get, post_method=requests.post):
+        self.endpoint = endpoint
+        self.username = username
+        self.password = password
+        self.get_method = get_method
+        self.post_method = post_method
+        if authenticate:
+            self.authenticate()
+
+    def _methods(self):
+        return {'get_method': self.get_method, 'post_method': self.post_method}
+
+    def _path(self, partial):
+        return u'/'.join([self.endpoint, partial])
+        # return urljoin(self.endpoint, partial)
+
+    def _auth_header(self):
+        return {'Authorization': 'Token %s' % self.token}
+
+    def _new_request(self, *args, **kwargs):
+        kwargs.update(self._methods())
+        return Request(self, *args, **kwargs)
 
     def _get_or_fail(self, path, params={}, message=None):
         path = path if path.startswith('http') else self._path(path)
-        path, params = self._prep_path(path, params)
-        response = requests.get(path, params=params, headers=self._auth_header())
-        return self._handle_response(response, message)
+        return self._new_request(path, params, self._auth_header())
 
-    def _post_or_fail(self, path, data, message=None, with_headers=False):
-        response = requests.post(path if path.startswith('http') else self._path(path),
-                                 data=data,
-                                 headers=self._auth_header() if with_headers else {})
-        return self._handle_response(response, message)
-
-    def _get_paginated_list(self, path, limit=None, page_size=20, params={}):
-        params.update({'limit': page_size})
-
-        results = []
-        current_page = path
-        while current_page:
-            data = self._get_or_fail(current_page, params=params)
-            results += data.get('results')
-            next_page = data.get('next', None)
-            if next_page == current_page:
-                raise RuntimeError('Infinite recursion conditions detected!')
-            current_page = next_page
-
-            if limit and len(results) >= limit:
-                break
-        return results
+    def _post_or_fail(self, path, data, with_headers=False):
+        path = path if path.startswith('http') else self._path(path)
+        headers = self._auth_header() if with_headers else {}
+        return self._new_request(path, data, headers)
 
     def authenticate(self):
         """
@@ -79,61 +101,57 @@ class TethneClient(object):
         message = 'Could not authenticate. Please check endpoint and ' \
                 + ' credentials, and try again.'
 
-        data = self._post_or_fail('api-token-auth/', auth_data, message)
+        data = self._post_or_fail('api-token-auth/', auth_data).post()
         self.token = data.get('token', None)
 
-    def follow_link(self, path, result_class, paginated=True, limit=None, **params):
+    def follow_link(self, path, result_class=dict, paginated=True, limit=None, **params):
+        request = self._new_request(path, params, self._auth_header())
         if paginated:
-            results = self._get_paginated_list(path, limit=limit, params=params)
-            return [result_class(self, result) for result in results]
-        return result_class(self, self._get_or_fail(path, params=params))
+            return ResultList(request, result_class)
+        return Result(request, result_class)
 
-    def list_corpora(self, limit=None, **params):
+    def list_corpora(self, **params):
         """
         List all corpora to which the user has access.
         """
-        results = self._get_paginated_list('rest/corpus/', limit=limit, params=params)
-        return [Corpus(self, result) for result in results]
+        return ResultList(self._get_or_fail('rest/corpus/', params=params), Corpus)
 
-    def list_papers(self, limit=100, **params):
+    def list_papers(self, **params):
         """
         List all papers to which the user has access.
         """
-        results = self._get_paginated_list('rest/paper/', limit=limit, params=params)
-        return [Paper(self, result) for result in results]
+        return ResultList(self._get_or_fail('rest/paper_instance/', params=params), Paper)
 
-    def list_authors(self, limit=100, **params):
+    def list_authors(self, **params):
         """
         List all papers to which the user has access.
         """
-        results = self._get_paginated_list('rest/author_instance/', limit=limit, params=params)
-        return [Author(self, result) for result in results]
+        return ResultList(self._get_or_fail('rest/author_instance/', params=params), Author)
 
-    def list_institutions(self, limit=100, **params):
+    def list_institutions(self, **params):
         """
         List all papers to which the user has access.
         """
-        results = self._get_paginated_list('rest/institution_instance/', limit=limit, params=params)
-        return [Institution(self, result) for result in results]
+        return ResultList(self._get_or_fail('rest/institution_instance/', params=params), Institution)
 
     def get_paper(self, id):
-        return Paper(self._get_or_fail('rest/paper/%i/' % int(id)))
+        return Result(self._get_or_fail('rest/paper_instance/%i/' % int(id)), Paper)
 
     def get_author(self, id):
-        return Author(self._get_or_fail('rest/author_instance/%i/' % int(id)))
+        return Result(self._get_or_fail('rest/author_instance/%i/' % int(id)), Author)
 
     def get_corpus(self, id):
-        return Corpus(self._get_or_fail('rest/corpus/%i/' % int(id)))
+        return Result(self._get_or_fail('rest/corpus/%i/' % int(id)), Corpus)
 
     def get_institution(self, id):
-        return Institution(self._get_or_fail('rest/institution_instance/%i/' % int(id)))
+        return Result(self._get_or_fail('rest/institution_instance/%i/' % int(id)), Institution)
 
-    def upload(self, tethne_corpus, label, source, batch_size=100):
-        handler = CorpusHandler(self, tethne_corpus, label, source, batch_size)
+    def upload(self, tethne_corpus, label, source, batch_size=100, corpus=None):
+        handler = CorpusHandler(self, tethne_corpus, label, source, batch_size, corpus=corpus)
         handler.run()
 
     def create_corpus(self, data):
-        return Corpus(self, self._post_or_fail('rest/corpus/', data, with_headers=True))
+        return Corpus(self, self._post_or_fail('rest/corpus/', data, with_headers=True).post())
 
     def create_bulk(self, model_name, data):
-        return self._post_or_fail('rest/%s/' % model_name, {'data': json.dumps(data)}, with_headers=True)
+        return self._post_or_fail('rest/%s/' % model_name, {'data': json.dumps(data)}, with_headers=True).post()
