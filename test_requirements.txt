@@ -21,3 +21,4 @@ SPARQLWrapper==1.7.6
 tethne==0.8.1.dev5
 Unidecode==0.4.19
 webencodings==0.5
+tethne
