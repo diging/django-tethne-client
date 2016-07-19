@@ -51,6 +51,8 @@ class CorpusHandler(object):
             paper_id = self._handle_paper(tethne_paper)
 
             for tethne_reference in getattr(tethne_paper, 'citedReferences', []):
+                if not tethne_reference:
+                    continue
                 self._handle_cited_reference(tethne_reference, paper_id)
 
             if len(self.hoppers['paper_instance']) >= self.batch_size:
@@ -126,7 +128,6 @@ class CorpusHandler(object):
 
         paper_data.update({
             'corpus_id': self.corpus.id,
-
         })
         paper_data.update(**additional)
         paper_id = self._add_instance('paper_instance', paper_data)
