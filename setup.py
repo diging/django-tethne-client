@@ -24,5 +24,6 @@ setup(
     include_package_data=True,
     install_requires=[
         'requests==2.10',
+        'jsonpickle==0.9.3'
     ],
 )

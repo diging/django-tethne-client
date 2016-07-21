@@ -29,7 +29,7 @@ $ pip install -U django-tethne-client
 
 ```python
 >>> corpus = corpora[0]
->>> corpus.papers
+>>> corpus.papers[:]
 [<tethneweb.classes.Paper at 0x104aa2e50>,
  <tethneweb.classes.Paper at 0x104aa2250>,
  <tethneweb.classes.Paper at 0x104aa2850>,
