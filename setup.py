@@ -7,7 +7,7 @@ MAINTAINER_EMAIL = 'erick [dot] peirson [at] asu [dot] edu'
 DESCRIPTION = ('Python client for django-tethne JSON API.')
 LICENSE = 'GNU GPL 3'
 URL = 'http://diging.github.io/tethne/'
-VERSION = '0.2.4'
+VERSION = '0.2.5'
 
 PACKAGES = ['tethneweb']
 
