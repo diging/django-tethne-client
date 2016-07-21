@@ -1,6 +1,6 @@
 import unittest, json, sys, mock
 sys.path.append('.')
-from tethneweb.client import TethneClient
+from tethneweb.client import TethneClient, Request
 from tethneweb.classes import *
 from tethneweb.results import Result, ResultList
 from urlparse import urlparse, parse_qs, urljoin
@@ -25,6 +25,16 @@ def _new_mocked_client():
     get = mock.Mock(side_effect=mock_requests_get)
     client = TethneClient('http://e.com', 'u', 'p', post_method=post, get_method=get)
     return client, get, post
+
+
+def _new_mocked_request(path, retries=3):
+    post = mock.Mock(side_effect=mock_requests_post)
+    get = mock.Mock(side_effect=mock_requests_get)
+    client = mock.Mock()
+    request = Request(client, path, params={}, headers={}, get_method=get,
+                      post_method=post, retries=retries)
+
+    return request, get, post
 
 
 def ok(fpath):
@@ -70,10 +80,8 @@ def mock_requests_get(path, params={}, headers={}):
     except:
         return MockResponse(400, 'bad bad bad')
 
-    if 'Authorization' not in headers:
-        return MockResponse(200, '[]')
-
     code = 200
+    content = None
     if o.path.endswith('corpus/'):
         content = ok('tests/responses/corpus-list.json')
     elif o.path.endswith('paper_instance/'):
@@ -96,6 +104,9 @@ def mock_requests_get(path, params={}, headers={}):
             content = ok('tests/responses/affiliationinstance-list-for-author.json')
     else:
         code, content = 400, 'never heard of it'
+
+    if code == 200 and 'Authorization' not in headers:
+        return MockResponse(200, '[]')
     return MockResponse(code, content)
 
 
@@ -107,6 +118,14 @@ class TestAuthentication(unittest.TestCase):
         self.assertTrue(hasattr(self.client, 'token'))
         self.assertTrue(self.client.token is not None)
         self.assertEqual(post.call_count, 1)
+
+
+class TestRetries(unittest.TestCase):
+    def test_bad_route(self):
+        request, get, post = _new_mocked_request('bad/path/indeed')
+        request.get()
+        self.assertEqual(get.call_count, 3)
+
 
 
 class TestCreate(unittest.TestCase):
