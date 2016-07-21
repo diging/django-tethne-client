@@ -137,6 +137,18 @@ class TestCreate(unittest.TestCase):
         # Authorization, corpus creation, and then six models.
         self.assertEqual(post.call_count, 8)
 
+    def test_upload_alt(self):
+        """
+        This Corpus is big, and has special characters in it.
+        """
+        from tethne.readers import wos
+        tethne_corpus = wos.read('tests/data/1-500.txt')
+
+        client, get, post = _new_mocked_client()
+        client.upload(tethne_corpus, 'a test', 'WOS', 5000)
+        # Authorization, corpus creation, and then six models.
+        self.assertEqual(post.call_count, 44)
+
 
 class TestGet(unittest.TestCase):
     def test_slice(self):

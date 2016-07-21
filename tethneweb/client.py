@@ -1,6 +1,6 @@
-__all__ = ['TethneClient',]
+t__all__ = ['TethneClient',]
 
-import json, requests, copy
+import json, requests, copy, jsonpickle
 from urlparse import urlparse, parse_qs, urljoin, urlunparse, SplitResult
 from urllib import urlencode
 
@@ -154,4 +154,8 @@ class TethneClient(object):
         return Corpus(self, self._post_or_fail('rest/corpus/', data, with_headers=True).post())
 
     def create_bulk(self, model_name, data):
-        return self._post_or_fail('rest/%s/' % model_name, {'data': json.dumps(data)}, with_headers=True).post()
+        try:
+            return self._post_or_fail('rest/%s/' % model_name, {'data': jsonpickle.encode(data)}, with_headers=True).post()
+        except Exception as E:
+            print model_name, data
+            raise E

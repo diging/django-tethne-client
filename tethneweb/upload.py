@@ -6,6 +6,7 @@ from uuid import uuid4
 
 
 
+
 identifier_fields = ['doi', 'ayjid', 'issn', 'isbn', 'uri']
 paper_fields = [
     ('date', 'publication_date'),
@@ -75,7 +76,7 @@ class CorpusHandler(object):
             self.hoppers[model_name] = []
 
     def _add_instance(self, model_name, instance):
-        ident = str(uuid4())
+        ident = unicode(uuid4())
         instance.update({'id': ident})
         self.hoppers[model_name].append(instance)
         return ident
@@ -91,7 +92,7 @@ class CorpusHandler(object):
         for field, value in tethne_paper.__dict__.iteritems():
             if self._exclude_paper_field(field):
                 continue
-            value = pickle.dumps(value)
+            # value = pickle.dumps(value)
             # if type(value) is not unicode:
             #     value = pickle.dumps(value)
 
