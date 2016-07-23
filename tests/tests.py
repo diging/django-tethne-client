@@ -127,7 +127,6 @@ class TestRetries(unittest.TestCase):
         self.assertEqual(get.call_count, 3)
 
 
-
 class TestCreate(unittest.TestCase):
     def test_create_corpus(self):
         client, get, post = _new_mocked_client()
@@ -167,6 +166,18 @@ class TestCreate(unittest.TestCase):
         client.upload(tethne_corpus, 'a test', 'WOS', 5000)
         # Authorization, corpus creation, and then six models.
         self.assertEqual(post.call_count, 44)
+
+    def test_upload_keyerror(self):
+        """
+        This Corpus is big, and generated a keyerror this one time.
+        """
+        from tethne.readers import wos
+        tethne_corpus = wos.read('tests/data/21001-21500.txt')
+
+        client, get, post = _new_mocked_client()
+        client.upload(tethne_corpus, 'a test', 'WOS', 5000)
+        # Authorization, corpus creation, and then six models.
+        self.assertEqual(post.call_count, 20)
 
 
 class TestGet(unittest.TestCase):

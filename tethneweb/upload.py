@@ -109,7 +109,11 @@ class CorpusHandler(object):
         # Generate data for Identifier model.
         identifiers = []
         for field in identifier_fields:
-            value = getattr(tethne_paper, field, None)
+            try:
+                value = getattr(tethne_paper, field, None)
+            except Exception as E:
+                print field
+                raise E
             if value:
                 identifiers.append({
                     'name': field,

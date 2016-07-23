@@ -27,6 +27,9 @@ $ pip install -U django-tethne-client
 
 ### Get related things
 
+Relations among result objects (e.g. Corpus, Paper, Author) can be accessed as
+properties. Fore xample
+
 ```python
 >>> corpus = corpora[0]
 >>> corpus.papers[:]
