@@ -3,7 +3,7 @@ import os
 import cPickle as pickle
 from collections import Counter, defaultdict
 from uuid import uuid4
-
+from hashlib import sha1
 
 
 
@@ -33,10 +33,11 @@ class CorpusHandler(object):
         'affiliation_instance',
     ]
 
-    def __init__(self, client, tethne_corpus, label, source, batch_size=100, corpus=None):
+    def __init__(self, client, tethne_corpus, label, source, batch_size=100, corpus=None, skip_duplicates=True):
         self.client = client
         self.id_map = {}
         self.batch_size = batch_size
+        self.skip_duplicates = skip_duplicates
         self.hoppers = defaultdict(list)
 
         if not corpus:
@@ -49,6 +50,8 @@ class CorpusHandler(object):
 
     def run(self):
         for tethne_paper in self.tethne_corpus:
+            if self.skip_duplicates and not self._check_unique(tethne_paper):
+                continue
             paper_id = self._handle_paper(tethne_paper)
 
             for tethne_reference in getattr(tethne_paper, 'citedReferences', []):
@@ -59,6 +62,20 @@ class CorpusHandler(object):
             if len(self.hoppers['paper_instance']) >= self.batch_size:
                 self._commit()
         self._commit()
+
+    def _get_checksum(self, paper):
+        def _to_frozenset(d):
+            if type(d) is dict:
+                return frozenset([(k, _to_frozenset(v)) for k, v in d.items()])
+            elif type(d) is list:
+                return frozenset([_to_frozenset(o) for o in d])
+            elif type(d) is tuple:
+                return frozenset([_to_frozenset(o) for o in list(d)])
+            return d
+        return hash(_to_frozenset(paper.__dict__))
+
+    def _check_unique(self, paper):
+        return self.client.check_unique(self._get_checksum(paper), self.corpus.id)
 
     def _commit(self):
         for model_name in self._add_order:
@@ -104,7 +121,6 @@ class CorpusHandler(object):
             })
         return metadata
 
-
     def _generate_identifiers(self, tethne_paper):
         # Generate data for Identifier model.
         identifiers = []
@@ -119,10 +135,8 @@ class CorpusHandler(object):
                     'name': field,
                     'value': value,
                     'corpus_id': self.corpus.id,
-
                 })
         return identifiers
-
 
     def _handle_paper(self, tethne_paper, **additional):
         paper_data = {}
@@ -151,10 +165,8 @@ class CorpusHandler(object):
         self._handle_authors(tethne_paper, paper_id)
         return paper_id
 
-
     def _handle_cited_reference(self, tethne_reference, paper_id):
         return self._handle_paper(tethne_reference, cited_by_id=paper_id, concrete=False)
-
 
     def _handle_institution(self, address, paper_id):
         return self._add_instance('institution_instance', {

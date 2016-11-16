@@ -102,9 +102,10 @@ def mock_requests_get(path, params={}, headers={}):
     elif o.path.endswith('affiliation_instance/'):
         if params.get('author', None) == '1':
             content = ok('tests/responses/affiliationinstance-list-for-author.json')
+    elif o.path.endswith('check_unique/'):
+        content = json.dumps({'unique': 'true'})
     else:
         code, content = 400, 'never heard of it'
-
     if code == 200 and 'Authorization' not in headers:
         return MockResponse(200, '[]')
     return MockResponse(code, content)
@@ -151,7 +152,7 @@ class TestCreate(unittest.TestCase):
         tethne_corpus = wos.read('tests/data/wos.txt')
 
         client, get, post = _new_mocked_client()
-        client.upload(tethne_corpus, 'a test', 'WOS', 1000)
+        client.upload(tethne_corpus, 'a test', 'WOS', 1000, skip_duplicates=False)
         # Authorization, corpus creation, and then six models.
         self.assertEqual(post.call_count, 8)
 
@@ -163,7 +164,7 @@ class TestCreate(unittest.TestCase):
         tethne_corpus = wos.read('tests/data/1-500.txt')
 
         client, get, post = _new_mocked_client()
-        client.upload(tethne_corpus, 'a test', 'WOS', 5000)
+        client.upload(tethne_corpus, 'a test', 'WOS', 5000, skip_duplicates=False)
         # Authorization, corpus creation, and then six models.
         self.assertEqual(post.call_count, 44)
 
@@ -175,7 +176,7 @@ class TestCreate(unittest.TestCase):
         tethne_corpus = wos.read('tests/data/21001-21500.txt')
 
         client, get, post = _new_mocked_client()
-        client.upload(tethne_corpus, 'a test', 'WOS', 5000)
+        client.upload(tethne_corpus, 'a test', 'WOS', 5000, skip_duplicates=False)
         # Authorization, corpus creation, and then six models.
         self.assertEqual(post.call_count, 20)
 
@@ -209,7 +210,6 @@ class TestGet(unittest.TestCase):
 
         self.assertIsInstance(papers[:10:2], list)
         self.assertEqual(get.call_count, 21)
-
 
     def test_corpora(self):
         client, get, post = _new_mocked_client()

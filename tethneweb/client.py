@@ -150,6 +150,15 @@ class TethneClient(object):
         """
         return ResultList(self._get_or_fail('rest/institution_instance/', params=params), Institution)
 
+    def check_unique(self, checksum, collection_id):
+        params = {
+            'checksum': checksum,
+            'collection': collection_id,
+        }
+        request = self._get_or_fail('rest/check_unique/', params=params)
+        response = request.get()
+        return response.get('result') == 'true'
+
     def get_paper(self, id):
         return Result(self._get_or_fail('rest/paper_instance/%i/' % int(id)), Paper)
 
@@ -162,8 +171,8 @@ class TethneClient(object):
     def get_institution(self, id):
         return Result(self._get_or_fail('rest/institution_instance/%i/' % int(id)), Institution)
 
-    def upload(self, tethne_corpus, label, source, batch_size=100, corpus=None):
-        handler = CorpusHandler(self, tethne_corpus, label, source, batch_size, corpus=corpus)
+    def upload(self, tethne_corpus, label, source, batch_size=100, corpus=None, skip_duplicates=True):
+        handler = CorpusHandler(self, tethne_corpus, label, source, batch_size, corpus=corpus, skip_duplicates=skip_duplicates)
         handler.run()
 
     def create_corpus(self, data):
