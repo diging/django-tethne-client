@@ -128,6 +128,7 @@ class CorpusHandler(object):
             try:
                 value = getattr(tethne_paper, field, None)
             except Exception as E:
+                print '::', tethne_paper
                 print field
                 raise E
             if value:
