@@ -2,6 +2,7 @@ from setuptools import setup, Extension
 
 DISTNAME = 'django-tethne-client'
 AUTHOR = 'E. Peirson, Digital Innovation Group @ ASU'
+AUTHOR_EMAIL = 'erick.peirson@gmail.com'
 MAINTAINER = 'Erick Peirson'
 MAINTAINER_EMAIL = 'erick [dot] peirson [at] asu [dot] edu'
 DESCRIPTION = ('Python client for django-tethne JSON API.')
@@ -14,6 +15,7 @@ PACKAGES = ['tethneweb']
 setup(
     name=DISTNAME,
     author=AUTHOR,
+    author_email=AUTHOR_EMAIL,
     maintainer=MAINTAINER,
     maintainer_email=MAINTAINER_EMAIL,
     description=DESCRIPTION,
