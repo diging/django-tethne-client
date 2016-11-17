@@ -124,7 +124,9 @@ class TestAuthentication(unittest.TestCase):
 class TestRetries(unittest.TestCase):
     def test_bad_route(self):
         request, get, post = _new_mocked_request('bad/path/indeed')
-        request.get()
+        with self.assertRaises(IOError):
+            request.get()
+
         self.assertEqual(get.call_count, 3)
 
 
@@ -170,7 +172,7 @@ class TestCreate(unittest.TestCase):
         client, get, post = _new_mocked_client()
         client.upload(tethne_corpus, 'a test', 'WOS', 5000, skip_duplicates=False)
         # Authorization, corpus creation, and then six models.
-        self.assertEqual(post.call_count, 44)
+        self.assertEqual(post.call_count, 38)
 
     def test_upload_keyerror(self):
         """
