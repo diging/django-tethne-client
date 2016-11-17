@@ -29,6 +29,7 @@ class Request(object):
 
     def _handle_response(self, response):
         if response.status_code != requests.codes.ok:
+            print response.status_code
             raise IOError(response.status_code)
         return response.json()
 
@@ -62,6 +63,7 @@ class Request(object):
             except IOError:
                 self.retries -= 1
                 time.sleep(1)
+        raise IOError('Request to %s failed' % self.url)
 
 
     def post(self):
@@ -72,6 +74,7 @@ class Request(object):
             except IOError:
                 self.retries -= 1
                 time.sleep(1)
+        raise IOError('Request to %s failed' % self.url)
 
 
 
@@ -150,14 +153,18 @@ class TethneClient(object):
         """
         return ResultList(self._get_or_fail('rest/institution_instance/', params=params), Institution)
 
-    def check_unique(self, checksum, collection_id):
+    def check_unique(self, checksum, corpus_id):
         params = {
             'checksum': checksum,
-            'collection': collection_id,
+            'corpus': corpus_id,
         }
-        request = self._get_or_fail('rest/check_unique/', params=params)
-        response = request.get()
-        return response.get('result') == 'true'
+        if type(checksum) is list:
+            request = self._post_or_fail('check_unique/', params, with_headers=True)
+            response = request.post()
+        else:
+            request = self._get_or_fail('check_unique/', params=params)
+            response = request.get()
+        return response.get('unique')
 
     def get_paper(self, id):
         return Result(self._get_or_fail('rest/paper_instance/%i/' % int(id)), Paper)

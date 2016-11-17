@@ -139,6 +139,10 @@ class TestCreate(unittest.TestCase):
         # Once for auth, and then again for create.
         self.assertEqual(post.call_count, 2)
 
+    def test_check_unique(self):
+        client, get, post = _new_mocked_client()
+        self.assertTrue(client.check_unique('12345', 1))
+
     def test_create_bulk(self):
         client, get, post = _new_mocked_client()
         self.assertEqual(post.call_count, 1)

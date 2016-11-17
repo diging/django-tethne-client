@@ -4,6 +4,7 @@ import cPickle as pickle
 from collections import Counter, defaultdict
 from uuid import uuid4
 from hashlib import sha1
+from itertools import repeat
 
 
 
@@ -49,9 +50,9 @@ class CorpusHandler(object):
         self.tethne_corpus = tethne_corpus
 
     def run(self):
-        for tethne_paper in self.tethne_corpus:
-            if self.skip_duplicates and not self._check_unique(tethne_paper):
-                continue
+
+
+        def _apply(tethne_paper):
             paper_id = self._handle_paper(tethne_paper)
 
             for tethne_reference in getattr(tethne_paper, 'citedReferences', []):
@@ -59,9 +60,27 @@ class CorpusHandler(object):
                     continue
                 self._handle_cited_reference(tethne_reference, paper_id)
 
+        def _apply_chunk(chunk):
+            if self.skip_duplicates:
+                unique = self._check_unique_bulk(chunk)
+            else:
+                unique = repeat(True, len(chunk))
+
+            map(_apply, [p for p, u in zip(chunk, unique) if u])
             if len(self.hoppers['paper_instance']) >= self.batch_size:
                 self._commit()
-        self._commit()
+
+        chunk = []
+        for tethne_paper in self.tethne_corpus:
+            chunk.append(tethne_paper)
+            if len(chunk) < 100:
+                continue
+            _apply_chunk(chunk)
+            chunk = []
+
+        if chunk:    # Remaining papers to be processed.
+            _apply_chunk(chunk)
+        self._commit()    # Commit any remaining data in hoppers.
 
     def _get_checksum(self, paper):
         def _to_frozenset(d):
@@ -76,6 +95,9 @@ class CorpusHandler(object):
 
     def _check_unique(self, paper):
         return self.client.check_unique(self._get_checksum(paper), self.corpus.id)
+
+    def _check_unique_bulk(self, papers):
+        return self.client.check_unique(map(self._get_checksum, papers), self.corpus.id)
 
     def _commit(self):
         for model_name in self._add_order:
@@ -109,16 +131,12 @@ class CorpusHandler(object):
         for field, value in tethne_paper.__dict__.iteritems():
             if self._exclude_paper_field(field):
                 continue
-            # value = pickle.dumps(value)
-            # if type(value) is not unicode:
-            #     value = pickle.dumps(value)
-
-            metadata.append({
-                'name': field,
-                'value': value,
-                'corpus_id': self.corpus.id,
-
-            })
+            if value:
+                metadata.append({
+                    'name': field,
+                    'value': value,
+                    'corpus_id': self.corpus.id,
+                })
         return metadata
 
     def _generate_identifiers(self, tethne_paper):
@@ -128,8 +146,6 @@ class CorpusHandler(object):
             try:
                 value = getattr(tethne_paper, field, None)
             except Exception as E:
-                print '::', tethne_paper
-                print field
                 raise E
             if value:
                 identifiers.append({
@@ -147,6 +163,7 @@ class CorpusHandler(object):
                 paper_data[dbfield] = value
 
         paper_data.update({
+            'checksum': self._get_checksum(tethne_paper),
             'corpus_id': self.corpus.id,
         })
         paper_data.update(**additional)
