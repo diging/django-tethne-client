@@ -19,6 +19,6 @@ rdflib==4.2.1
 requests==2.10.0
 six==1.10.0
 SPARQLWrapper==1.7.6
-tethne==0.8.1.dev7
+tethne==0.8.1.dev10
 Unidecode==0.4.19
 webencodings==0.5

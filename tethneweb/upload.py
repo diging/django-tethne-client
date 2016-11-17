@@ -50,8 +50,6 @@ class CorpusHandler(object):
         self.tethne_corpus = tethne_corpus
 
     def run(self):
-
-
         def _apply(tethne_paper):
             paper_id = self._handle_paper(tethne_paper)
 
