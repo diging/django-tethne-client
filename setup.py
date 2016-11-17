@@ -2,9 +2,9 @@ from setuptools import setup, Extension
 
 DISTNAME = 'django-tethne-client'
 AUTHOR = 'E. Peirson, Digital Innovation Group @ ASU'
-AUTHOR_EMAIL = 'erick.peirson@gmail.com'
+AUTHOR_EMAIL = 'erick.peirson@asu.edu'
 MAINTAINER = 'Erick Peirson'
-MAINTAINER_EMAIL = 'erick [dot] peirson [at] asu [dot] edu'
+MAINTAINER_EMAIL = 'erick.peirson@asu.edu'
 DESCRIPTION = ('Python client for django-tethne JSON API.')
 LICENSE = 'GNU GPL 3'
 URL = 'http://diging.github.io/tethne/'
